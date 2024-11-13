@@ -1,10 +1,10 @@
 # P2P Chat and VoIP Application using UDP in Java
 
-This repository contains the codebase for the **Peer-to-Peer (P2P) Chat and VoIP application** developed as the main assignment for the **Computer Networks II** course at the **Aristotle University of Thessaloniki (AUTH)** during the **2024-2025** academic year.
+This repository contains the codebase of the **Peer-to-Peer (P2P) Chat and VoIP application** which will be developed as the main assignment for the **Computer Networks II** course. This course is taught as part of the curiculum of the **Electrical and Computer Engineering** department of the **Aristotle University of Thessaloniki (AUTH)** during the **2024-2025** academic year.
 
 ## 📚 Project Overview
 
-The project involves creating a simple Peer-to-Peer (P2P) application that facilitates real-time text-based chat and Voice over IP (VoIP) communication using UDP in Java. This application leverages the `java.net` package to handle network communications, providing a foundational understanding of network programming, concurrency, and multimedia data transmission.
+The purpose of this project is to create a simple Peer-to-Peer (P2P) application that enables real-time chat and Voice over IP (VoIP) communication utilizing the UDP protocol in Java. This application will be based on  `java.net` to handle network communications, providing a foundational understanding of network programming, concurrency, and instant messaging and multimedia dataexchange between two peers.
 
 ## 🛠️ Technologies Used
 
