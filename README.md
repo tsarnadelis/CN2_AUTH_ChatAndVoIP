@@ -31,7 +31,7 @@ The project involves creating a simple Peer-to-Peer (P2P) application that facil
    git clone https://github.com/siavvasm/CN2_AUTH_ChatAndVoIP.git
    ```
 
-2. **Clone the Repository:**
+2. **Import the code into the ECLIPSE IDE:**
 
 - In ECLIPSE IDE select File -> Import
 - In the displayed Window select "Existing Maven Projects" anc click Next
