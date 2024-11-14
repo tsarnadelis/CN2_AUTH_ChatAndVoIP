@@ -24,6 +24,15 @@ The purpose of this project is to create a simple Peer-to-Peer (P2P) application
 - Simplistic Graphic User Interface (GUI) instead of command line implementation
 - Multithreaded architecture to enable concurent instant messaging and VoIP functionalities
 
+## 🛠️ Pre-requisites 
+
+Please consider installing and using the following applications and tools for the assignment:
+
+- Git: [link](https://git-scm.com/downloads)
+- Java 23 (although it is expected to work with any version from 1.8 and beyond): [link](https://www.oracle.com/java/technologies/downloads/)
+- Eclipse IDE for Enterprise Java and Web Developers: [link](https://www.eclipse.org/downloads/packages/)
+- Apache Maven: [link](https://maven.apache.org/download.cgi)
+
 ## 🚀 Installation
 
 1. **Clone the Repository:**
