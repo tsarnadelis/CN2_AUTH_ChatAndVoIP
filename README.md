@@ -60,7 +60,7 @@ In order to compile and execute the code you need to select the App.java class a
 
 As can be seen by the figure above, the application contains a Text Field that is used for writing the messages that need to be sent to the other peer, a Text Area for displaying the messages that have been sent or received, and two buttons. The "Send" button is responsible for sending the messages that are typed into the Text Field. The "Call" button is responsible for initiating a VoIP call with the remote peer (i.e., for starting listening for voice packets and sending voice packets captured from the computer's microphone).
 
-As part of the assignment, you will need to implement the functionalities of the "Send" and "Call" buttons. 
+As part of the assignment, you will need to implement the functionalities of the "Send" and "Call" buttons (as at the moment they are doing nothing). 
 
 Inside the codebase of the application, there are specific spaces in which you will need to complete by writing the appropriate source code.  These are designated with the **//TODO:** comment tag. For example, you should search for parts of the following form: 
 
