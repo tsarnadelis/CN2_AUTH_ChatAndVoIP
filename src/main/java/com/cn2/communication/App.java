@@ -9,11 +9,8 @@ import javax.swing.JButton;
 import javax.swing.JTextArea;
 import javax.swing.JScrollPane;
 
-import java.awt.event.ActionListener;
-import java.awt.event.ActionEvent;
 import java.awt.*;
 import java.awt.event.*;
-import java.awt.Color;
 import java.lang.Thread;
 
 public class App extends Frame implements WindowListener, ActionListener {
@@ -30,75 +27,114 @@ public class App extends Frame implements WindowListener, ActionListener {
 	final static String newline="\n";		
 	static JButton callButton;				
 	
-	// TODO: Please define and initialize your variables here...
+	private boolean isCallActive = false; // Flag to track call state
+    private static final int PORT = 8080; // Port number for communication
+    private static Socket socket;              // Socket for client communication
+	private static PrintWriter writer;         // Writer for sending messages
+	private static BufferedReader reader;      // Reader for receiving messages
+			
+			/**
+			 * Construct the app's frame and initialize important parameters
+			 */
+			public App(String title) {
+				
+				/*
+				 * 1. Defining the components of the GUI
+				 */
+				
+				// Setting up the characteristics of the frame
+				super(title);									
+				gray = new Color(254, 254, 254);		
+				setBackground(gray);
+				setLayout(new FlowLayout());			
+				addWindowListener(this);	
+				
+				// Setting up the TextField and the TextArea
+				inputTextField = new TextField();
+				inputTextField.setColumns(20);
+				
+				// Setting up the TextArea.
+				textArea = new JTextArea(10,40);			
+				textArea.setLineWrap(true);				
+				textArea.setEditable(false);			
+				JScrollPane scrollPane = new JScrollPane(textArea);
+				scrollPane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_ALWAYS);
+				
+				//Setting up the buttons
+				sendButton = new JButton("Send");			
+				callButton = new JButton("Call");			
+								
+				/*
+				 * 2. Adding the components to the GUI
+				 */
+				add(scrollPane);								
+				add(inputTextField);
+				add(sendButton);
+				add(callButton);
+				
+				/*
+				 * 3. Linking the buttons to the ActionListener
+				 */
+				sendButton.addActionListener(this);			
+				callButton.addActionListener(this);	
+		
+				
+			}
+			
+			/**
+			 * The main method of the application. It continuously listens for
+			 * new messages.
+			 */
+			public static void main(String[] args){
+			
+				/*
+				 * 1. Create the app's window
+				 */
+				App app = new App("CN2 - AUTH");																	  
+				app.setSize(500,250);				  
+				app.setVisible(true);				  
+		
+				/*
+				 * 2. If server is not found, open a new socket
+				 */
+				try (ServerSocket serverSocket = new ServerSocket(PORT)){	
+					textArea.append("Socket not found, opening new socket at " + serverSocket.getInetAddress() + ":" + serverSocket.getLocalPort() + "\n");
+					while (true) {
+						Socket clientSocket = serverSocket.accept();
+						textArea.append("Client connected.\n");
+						writer = new PrintWriter(clientSocket.getOutputStream(), true);
+						reader = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
 	
-	/**
-	 * Construct the app's frame and initialize important parameters
-	 */
-	public App(String title) {
-		
-		/*
-		 * 1. Defining the components of the GUI
-		 */
-		
-		// Setting up the characteristics of the frame
-		super(title);									
-		gray = new Color(254, 254, 254);		
-		setBackground(gray);
-		setLayout(new FlowLayout());			
-		addWindowListener(this);	
-		
-		// Setting up the TextField and the TextArea
-		inputTextField = new TextField();
-		inputTextField.setColumns(20);
-		
-		// Setting up the TextArea.
-		textArea = new JTextArea(10,40);			
-		textArea.setLineWrap(true);				
-		textArea.setEditable(false);			
-		JScrollPane scrollPane = new JScrollPane(textArea);
-		scrollPane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_ALWAYS);
-		
-		//Setting up the buttons
-		sendButton = new JButton("Send");			
-		callButton = new JButton("Call");			
-						
-		/*
-		 * 2. Adding the components to the GUI
-		 */
-		add(scrollPane);								
-		add(inputTextField);
-		add(sendButton);
-		add(callButton);
-		
-		/*
-		 * 3. Linking the buttons to the ActionListener
-		 */
-		sendButton.addActionListener(this);			
-		callButton.addActionListener(this);	
+						// Continuously listen for messages
+						String incomingMessage;
+						while ((incomingMessage = reader.readLine()) != null) {
+							textArea.append("Friend: " + incomingMessage + "\n");
+						}
+					}
+				} catch (Exception e) {
+					textArea.append("Cannot open socket. Looking...\n");
+				}
+				
+				/*
+				 * 3. If server is found, connect to the server
+				 */
+				try {	
+					textArea.append("Socket found, connecting...\n");
+					while (true) {
+						socket = new Socket("localhost", PORT);
+						writer = new PrintWriter(socket.getOutputStream(), true);
+						reader = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+						textArea.append("Connected to the server at " + socket.getInetAddress() + ":" + socket.getPort() + "\n");
 
-		
-	}
-	
-	/**
-	 * The main method of the application. It continuously listens for
-	 * new messages.
-	 */
-	public static void main(String[] args){
-	
-		/*
-		 * 1. Create the app's window
-		 */
-		App app = new App("CN2 - AUTH");  // TODO: You can add the title that will displayed on the Window of the App here																		  
-		app.setSize(500,250);				  
-		app.setVisible(true);				  
-
-		/*
-		 * 2. 
-		 */
-		do{		
-			// TODO: Your code goes here...
-		}while(true);
+						// Continuously listen for messages
+						String incomingMessage;
+						while ((incomingMessage = reader.readLine()) != null) {
+                    	textArea.append("Friend: " + incomingMessage + "\n");
+                	}
+				}
+				} catch (Exception e) {
+					textArea.append("Cannot open socket.\n");
+				}
 	}
 	
 	/**
@@ -113,23 +149,26 @@ public class App extends Frame implements WindowListener, ActionListener {
 		/*
 		 * Check which button was clicked.
 		 */
-		if (e.getSource() == sendButton){
-			
-			// The "Send" button was clicked
-			
-			// TODO: Your code goes here...
-		
-			
-		}else if(e.getSource() == callButton){
-			
-			// The "Call" button was clicked
-			
-			// TODO: Your code goes here...
-			
-			
+		if (e.getSource() == sendButton) {
+            // Send button clicked
+            String message = inputTextField.getText().trim();
+            if (!message.isEmpty() && writer != null) {
+                textArea.append("You: " + message + "\n");
+                writer.println(message); // Send message to the other client
+                inputTextField.setText(""); // Clear the input field
+            }
+        } else if (e.getSource() == callButton) {
+             // Simulate voice call
+			 if (!isCallActive) {
+                textArea.append("Voice call started...\n");
+                isCallActive = true;
+                callButton.setText("End Call");
+            } else {
+                textArea.append("Voice call ended...\n");
+                isCallActive = false;
+                callButton.setText("Call");
+            }
 		}
-			
-
 	}
 
 	/**
@@ -151,7 +190,7 @@ public class App extends Frame implements WindowListener, ActionListener {
 	public void windowClosing(WindowEvent e) {
 		// TODO Auto-generated method stub
 		dispose();
-        	System.exit(0);
+        System.exit(0);
 	}
 
 	@Override
