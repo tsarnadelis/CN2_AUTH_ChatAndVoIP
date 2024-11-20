@@ -30,9 +30,7 @@ public class App extends Frame implements WindowListener, ActionListener {
     private static final int PORT = 8080;      // Port number for chat
 	private static final int CALL_PORT1 = 8081; // Port number for voice call
 	private static final int CALL_PORT2 = 8082; // Port number for voice call
-    private static Socket socket;             // Socket for client communication
-    private static PrintWriter writer;        // Writer for sending messages
-    private static BufferedReader reader;     // Reader for receiving messages
+    private static DatagramSocket socket;             // Socket for client communicationges
 
     private DatagramSocket callSocket;        // UDP socket for voice call
 
@@ -84,48 +82,32 @@ public class App extends Frame implements WindowListener, ActionListener {
         app.setSize(500, 250);
         app.setVisible(true);
 
-        // Start server or connect to server in a new thread
-        new Thread(app::startChat).start();
+        // Start message listener
+        listener();
     }
 
-    private void startChat() {
-        try (ServerSocket serverSocket = new ServerSocket(PORT)) {
-            textArea.append("Open socket not found, opening a new one at "+ serverSocket.getInetAddress() + ":" + serverSocket.getLocalPort() +"\n");
-            socket = serverSocket.accept();
-			setTitle("CN2 - SERVER");
-            textArea.append("Client connected.\n");
-            setupChatStreams(socket);
-            listenForMessages();
-			startCallReceiver();
-        } catch (IOException e) {
-            try {
-                textArea.append("Trying to connect to server...\n");
-                socket = new Socket("localhost", PORT);
-				setTitle("CN2 - CLIENT");
-                textArea.append("Connected to server.\n");
-                setupChatStreams(socket);
-                listenForMessages();
-				startCallReceiver();
-            } catch (IOException ex) {
-                textArea.append("Error: Could not connect to server.\n");
-            }
-        }
-    }
-
-    private void setupChatStreams(Socket socket) throws IOException {
-        writer = new PrintWriter(socket.getOutputStream(), true);
-        reader = new BufferedReader(new InputStreamReader(socket.getInputStream()));
-    }
-
-    private void listenForMessages() {
+    // This listens for incoming messages all the time
+    private static void listener() {
         new Thread(() -> {
-            try {
-                String incomingMessage;
-                while ((incomingMessage = reader.readLine()) != null) {
-                    textArea.append("Friend: " + incomingMessage + "\n");
+            byte[] receiveBuffer = new byte[1024];
+
+            while (true) {
+                try {
+                    socket = new DatagramSocket(PORT);
+                    while (true) {
+                        DatagramPacket receivePacket = new DatagramPacket(receiveBuffer, receiveBuffer.length);
+                        socket.receive(receivePacket);
+                        String message = new String(receivePacket.getData(), 0, receivePacket.getLength());
+                        SwingUtilities.invokeLater(() -> textArea.append("Friend: " + message + newline));
+                    }
+                } catch (IOException e) {
+                    SwingUtilities.invokeLater(() -> textArea.append("Error receiving message: " + e.getMessage() + newline));
+                    try {
+                        Thread.sleep(1000);
+                    } catch (InterruptedException e1) {
+                        e1.printStackTrace();
+                    }
                 }
-            } catch (IOException e) {
-                textArea.append("Connection lost.\n");
             }
         }).start();
     }
@@ -242,11 +224,17 @@ public class App extends Frame implements WindowListener, ActionListener {
         if (e.getSource() == sendButton) {
             // Send button clicked
             String message = inputTextField.getText().trim();
-            if (!message.isEmpty() && writer != null) {
-                textArea.append("You: " + message + "\n");
-                writer.println(message); // Send message to the other client
-                inputTextField.setText(""); // Clear the input field
-            }
+            if (!message.isEmpty()) {
+                textArea.append("You: " + message + newline);
+                try {
+                    InetAddress receiverAddress = InetAddress.getByName("localhost"); // Replace with actual receiver's IP
+                    byte[] sendBuffer = message.getBytes();
+                    DatagramPacket sendPacket = new DatagramPacket(sendBuffer, sendBuffer.length, receiverAddress, PORT);
+                    socket.send(sendPacket);
+                    inputTextField.setText("");
+                } catch (IOException ex) {
+                    textArea.append("Error sending message: " + ex.getMessage() + newline);
+                }
         } else if (e.getSource() == callButton) {
             if (!isCallActive) {
                 isCallActive = true;
@@ -258,6 +246,7 @@ public class App extends Frame implements WindowListener, ActionListener {
             }
         }
     }
+}
 
     @Override
     public void windowClosing(WindowEvent e) {
