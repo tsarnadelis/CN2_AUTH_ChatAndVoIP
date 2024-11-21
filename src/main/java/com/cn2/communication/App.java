@@ -26,14 +26,13 @@ public class App extends Frame implements WindowListener, ActionListener {
     final static String newline = "\n";
     static JButton callButton;
 
-    private boolean isCallActive = false; // Flag to track call state
-    private static final int PORT = 8080;      // Port number for chat
-	private static final int CALL_PORT1 = 8081; // Port number for voice call
-	private static final int CALL_PORT2 = 8082; // Port number for voice call
-    private static DatagramSocket socket;             // Socket for client communicationges
-
-    private DatagramSocket callSocket;        // UDP socket for voice call
-
+    private boolean isCallActive = false;               // Flag to track call state
+    private static final int CHAT_PORT = 8080;          // Port number for chat
+	private static final int CALL_PORT = 8081;          // Port number for voice call
+    private static DatagramSocket socket;               // Socket for client communicationges
+    private static DatagramSocket callSocket;           // UDP socket for voice call
+    private static String receiverIP = "localhost";     // IP address of the receiver
+    
 
     public App(String title) {
         /*
@@ -83,17 +82,20 @@ public class App extends Frame implements WindowListener, ActionListener {
         app.setVisible(true);
 
         // Start message listener
-        listener();
+        chatListener();
+
+        // Start call listener
+        callListener();
     }
 
     // This listens for incoming messages all the time
-    private static void listener() {
+    private static void chatListener() {
         new Thread(() -> {
             byte[] receiveBuffer = new byte[1024];
 
             while (true) {
                 try {
-                    socket = new DatagramSocket(PORT);
+                    socket = new DatagramSocket(CHAT_PORT);
                     while (true) {
                         DatagramPacket receivePacket = new DatagramPacket(receiveBuffer, receiveBuffer.length);
                         socket.receive(receivePacket);
@@ -113,97 +115,64 @@ public class App extends Frame implements WindowListener, ActionListener {
     }
 
     // This thread listens for incoming audio packets all the time
-	private void startCallReceiver() {
-		boolean isServer = this.getTitle().equalsIgnoreCase("CN2 - SERVER");
-		int receivePort = isServer ? CALL_PORT2 : CALL_PORT1;
-	
-		try {
-			callSocket = new DatagramSocket(receivePort);
-			AudioFormat format = new AudioFormat(44100.0f, 16, 1, true, true);
+	private static void callListener() {
+		new Thread(() -> {
+            byte[] receiveCallBuffer = new byte[1024];
+            AudioFormat format = new AudioFormat(44100.0f, 16, 1, true, true);
 			DataLine.Info speakerInfo = new DataLine.Info(SourceDataLine.class, format);
-			SourceDataLine speakers = (SourceDataLine) AudioSystem.getLine(speakerInfo);
-			speakers.open(format);
-	
-			Thread receiveThread = new Thread(() -> {
-				byte[] receiveBuffer = new byte[1024];
-				while (true) {
-					try {
-						DatagramPacket receivePacket = new DatagramPacket(receiveBuffer, receiveBuffer.length);
-						callSocket.receive(receivePacket);
-	
-						if (!isCallActive) {
-							int response = JOptionPane.showConfirmDialog(
-								null,
-								"Incoming call. Do you want to connect?",
-								"Incoming Call",
-								JOptionPane.YES_NO_OPTION
-							);
-	
-							if (response == JOptionPane.YES_OPTION) {
-								isCallActive = true;
-								textArea.append("Call connected.\n");
-								speakers.start(); // Start audio playback
-							} else {
-								textArea.append("Call rejected.\n");
-								continue; // Ignore the packet
-							}
-						}
-	
-						if (isCallActive) {
-							speakers.write(receivePacket.getData(), 0, receivePacket.getLength());
-						}
-					} catch (IOException e) {
-						textArea.append("Error during call (receiving): " + e.getMessage() + "\n");
-						break;
-					}
-				}
-				speakers.close();
-			});
-	
-			receiveThread.start();
-		} catch (LineUnavailableException | SocketException e) {
-			textArea.append("Error initializing call receiver: " + e.getMessage() + "\n");
-		}
+			
+            while (true) {
+                try {
+                    SourceDataLine speakers = (SourceDataLine) AudioSystem.getLine(speakerInfo);
+			        speakers.open(format);
+                    callSocket = new DatagramSocket(CALL_PORT);
+                    while (true) {
+                        DatagramPacket receiveCallPacket = new DatagramPacket(receiveCallBuffer, receiveCallBuffer.length);
+                        callSocket.receive(receiveCallPacket);
+                        speakers.start(); // Start audio playback
+                        speakers.write(receiveCallPacket.getData(), 0, receiveCallPacket.getLength());
+                        // speakers.close(); // Speakers are always open. Uncommenting this makes the speakers not work
+                    }
+                } catch (IOException | LineUnavailableException e) {
+                    if (e.getMessage().equals("Socket closed")) continue; // Ignore error when closing call
+                    textArea.append("Error receiving call: " + e.getMessage() + newline);
+                    try {
+                        Thread.sleep(1000);
+                    } catch (InterruptedException e1) {
+                        e1.printStackTrace();
+                    }
+                }
+            }
+        }).start();
 	}
 	
-
-	private void startCall() {
-		boolean isServer = this.getTitle().equalsIgnoreCase("CN2 - SERVER");
-		int sendPort = isServer ? CALL_PORT1 : CALL_PORT2;
-	
-		try {
-			AudioFormat format = new AudioFormat(44100.0f, 16, 1, true, true);
-			DataLine.Info micInfo = new DataLine.Info(TargetDataLine.class, format);
-			TargetDataLine microphone = (TargetDataLine) AudioSystem.getLine(micInfo);
-			microphone.open(format);
-	
-			Thread sendThread = new Thread(() -> {
-				byte[] buffer = new byte[1024];
-				try {
-					InetAddress receiverAddress = InetAddress.getByName("localhost"); // Replace with actual receiver's IP
-					DatagramSocket sendSocket = new DatagramSocket(); // Use ephemeral port for sending
-					microphone.start();
-	
-					while (isCallActive) {
-						int bytesRead = microphone.read(buffer, 0, buffer.length);
-						DatagramPacket packet = new DatagramPacket(buffer, bytesRead, receiverAddress, sendPort);
-						sendSocket.send(packet);
-					}
-					sendSocket.close();
-				} catch (IOException e) {
-					textArea.append("Error during call (sending): " + e.getMessage() + "\n");
-				} finally {
-					microphone.close();
-				}
-			});
-	
-			isCallActive = true;
-			textArea.append("Call started.\n");
-			sendThread.start();
-		} catch (LineUnavailableException e) {
-			textArea.append("Error during call setup: " + e.getMessage() + "\n");
-		}
-	}
+    private void startCall() {
+        new Thread(() -> {
+            try {
+                AudioFormat format = new AudioFormat(44100.0f, 16, 1, true, true);
+                DataLine.Info micInfo = new DataLine.Info(TargetDataLine.class, format);
+                TargetDataLine microphone = (TargetDataLine) AudioSystem.getLine(micInfo);
+                microphone.open(format);
+        
+                byte[] buffer = new byte[1024];
+                InetAddress receiverAddress = InetAddress.getByName(receiverIP);
+                DatagramSocket sendSocket = new DatagramSocket();
+                microphone.start();
+                
+                while(isCallActive) {
+                    int bytesRead = microphone.read(buffer, 0, buffer.length);
+                    DatagramPacket packet = new DatagramPacket(buffer, bytesRead, receiverAddress, CALL_PORT);
+                    sendSocket.send(packet);
+                }
+                
+                microphone.close();
+                sendSocket.close();
+    
+            } catch (IOException | LineUnavailableException e) {
+                textArea.append("Error during call: " + e.getMessage() + "\n");
+            }
+        }).start();
+    }
 	
 
 	private void endCall() {
@@ -227,16 +196,18 @@ public class App extends Frame implements WindowListener, ActionListener {
             if (!message.isEmpty()) {
                 textArea.append("You: " + message + newline);
                 try {
-                    InetAddress receiverAddress = InetAddress.getByName("localhost"); // Replace with actual receiver's IP
+                    InetAddress receiverAddress = InetAddress.getByName(receiverIP);
                     byte[] sendBuffer = message.getBytes();
-                    DatagramPacket sendPacket = new DatagramPacket(sendBuffer, sendBuffer.length, receiverAddress, PORT);
+                    DatagramPacket sendPacket = new DatagramPacket(sendBuffer, sendBuffer.length, receiverAddress, CHAT_PORT);
                     socket.send(sendPacket);
                     inputTextField.setText("");
                 } catch (IOException ex) {
                     textArea.append("Error sending message: " + ex.getMessage() + newline);
                 }
-        } else if (e.getSource() == callButton) {
+            } 
+        }else if (e.getSource() == callButton) {
             if (!isCallActive) {
+                textArea.append("Starting call...\n");
                 isCallActive = true;
                 callButton.setText("End Call");
                 startCall();
@@ -246,7 +217,6 @@ public class App extends Frame implements WindowListener, ActionListener {
             }
         }
     }
-}
 
     @Override
     public void windowClosing(WindowEvent e) {
