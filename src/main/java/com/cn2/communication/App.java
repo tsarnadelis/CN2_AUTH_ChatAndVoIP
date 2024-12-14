@@ -26,7 +26,7 @@ public class App extends Frame implements WindowListener, ActionListener {
     final static String newline = "\n";
     static JButton callButton;
 
-    private static String receiverIP = "192.168.1.7";     // IP address of the receiver
+    private static String receiverIP = "localhost";    // IP address of the receiver //REPLACE THIS WITH IPv4 ADDRESS OF THE RECEIVER
     private static final int CHAT_PORT = 8080;          // Port number for chat
     private static DatagramSocket socket;               // Socket for client communication
     private boolean isCallActive = false;               // Flag to track call state
