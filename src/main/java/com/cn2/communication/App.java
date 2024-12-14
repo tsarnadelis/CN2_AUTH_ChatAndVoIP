@@ -26,12 +26,12 @@ public class App extends Frame implements WindowListener, ActionListener {
     final static String newline = "\n";
     static JButton callButton;
 
-    private boolean isCallActive = false;               // Flag to track call state
+    private static String receiverIP = "192.168.1.7";     // IP address of the receiver
     private static final int CHAT_PORT = 8080;          // Port number for chat
+    private static DatagramSocket socket;               // Socket for client communication
+    private boolean isCallActive = false;               // Flag to track call state
 	private static final int CALL_PORT = 8081;          // Port number for voice call
-    private static DatagramSocket socket;               // Socket for client communicationges
     private static DatagramSocket callSocket;           // UDP socket for voice call
-    private static String receiverIP = "localhost";     // IP address of the receiver
     
 
     public App(String title) {
@@ -182,7 +182,6 @@ public class App extends Frame implements WindowListener, ActionListener {
 				callSocket.close();
 			}
 			textArea.append("Call ended.\n");
-			callButton.setText("Call");
 		}
 	}
 	
