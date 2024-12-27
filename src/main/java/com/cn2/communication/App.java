@@ -77,7 +77,7 @@ public class App extends Frame implements WindowListener, ActionListener {
     }
 
     public static void main(String[] args) {
-        App app = new App("CN2 - AUTH");
+        App app = new App("CN2 - AUTH - Group AQ");
         app.setSize(500, 250);
         app.setVisible(true);
 
